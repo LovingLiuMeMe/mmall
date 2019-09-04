@@ -1,7 +1,6 @@
 package cn.lovingliu.common;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 
@@ -10,7 +9,7 @@ import java.io.Serializable;
  * @Description:
  * @Date：Created in 2019-09-04
  */
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL) // 当某个字段为null 不将该字段进行序列化（key消失）
+@JsonInclude(JsonInclude.Include.NON_NULL) // 当某个字段为null 不将该字段进行序列化（key消失）
 public class ServerResponse<T> implements Serializable {
     private int status;
     private String msg;
@@ -32,8 +31,11 @@ public class ServerResponse<T> implements Serializable {
         this.msg = msg;
         this.data = data;
     }
-    @JsonIgnore
-    public boolean isSuccess(){
+    // @JsonIgnore
+    //public boolean isSuccess(){
+        //return this.status == ResponseCode.SUCCESS.getCode();
+    //}
+    public boolean ifSuccess(){
         return this.status == ResponseCode.SUCCESS.getCode();
     }
     public int getStatus(){
@@ -61,9 +63,6 @@ public class ServerResponse<T> implements Serializable {
     public static <T> ServerResponse<T> createBySuccess(String msg,T data){
         return new ServerResponse<T>(ResponseCode.SUCCESS.getCode(),msg,data);
     }
-
-
-
 
 
     public static <T> ServerResponse<T> createByError(){
