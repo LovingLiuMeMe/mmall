@@ -1,31 +1,3 @@
-### 1.git 分支的使用
-```git
-git branch 查看当前所处分支
-git checkout -b v1.0 origin/master 从主分支上检出分支 v1.0 并切换
- git push origin HEAD -u push分支
-```
-
-### 2.Spring里PropertyPlaceholderConfigurer类的使用
-PropertyPlaceholderConfigurer是个bean工厂后置处理器的实现，也就是 BeanFactoryPostProcessor接口的一个实现。  
-PropertyPlaceholderConfigurer可以将上下文（配置文 件）中的属性值放在另一个单独的标准java Properties文件中去。  
-在XML文件中用${key}替换指定的properties文件中的值。这样的话，只需要对properties文件进 行修改，而不用对xml配置文件进行修改。
-```xml
-    <bean id="propertyConfigurer"
-          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="order" value="2"/>
-        <property name="ignoreUnresolvablePlaceholders" value="true"/>
-        <property name="locations">
-            <list>
-                <value>classpath:datasource.properties</value>
-            </list>
-        </property>
-        <property name="fileEncoding" value="utf-8"/>
-    </bean>
-```
-为简化`PropertyPlaceholderConfigurer`的使用，Spring提供了`<context:property-placeholder/>`元素。下面给出了配置示例，启用它后，开发者便不用配置PropertyPlaceholderConfigurer对象了。
-```xml
-<context:property-placeholder location="userinfo.properties"/> 
-```
 ### 数据库创建
 ```sql
 CREATE TABLE `mmall_user` (
@@ -146,4 +118,152 @@ CREATE TABLE `mmall_shipping` (
   `update_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8;
+```
+
+
+### 1.git 分支的使用
+```git
+git branch 查看当前所处分支
+git checkout -b v1.0 origin/master 从主分支上检出分支 v1.0 并切换
+ git push origin HEAD -u push分支
+```
+
+### 2.Spring里PropertyPlaceholderConfigurer类的使用
+PropertyPlaceholderConfigurer是个bean工厂后置处理器的实现，也就是 BeanFactoryPostProcessor接口的一个实现。  
+PropertyPlaceholderConfigurer可以将上下文（配置文 件）中的属性值放在另一个单独的标准java Properties文件中去。  
+在XML文件中用${key}替换指定的properties文件中的值。这样的话，只需要对properties文件进 行修改，而不用对xml配置文件进行修改。
+```xml
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="order" value="2"/>
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath:datasource.properties</value>
+            </list>
+        </property>
+        <property name="fileEncoding" value="utf-8"/>
+    </bean>
+```
+为简化`PropertyPlaceholderConfigurer`的使用，Spring提供了`<context:property-placeholder/>`元素。下面给出了配置示例，启用它后，开发者便不用配置PropertyPlaceholderConfigurer对象了。
+```xml
+<context:property-placeholder location="userinfo.properties"/> 
+```
+
+## 一.用户UserController
+#### 1.枚举类型
+```java
+package cn.lovingliu.common;
+
+/**
+ * @Author：LovingLiu
+ * @Description:
+ * @Date：Created in 2019-09-04
+ */
+public enum ResponseCode {
+    SUCCESS(0,"SUCCESS"),
+    ERROR(1,"ERROR"),
+    NEED_LOGIN(10,"NEED_LOGIN"),
+    ILLEGAL_ARGUMENT(2,"ILLEGAL_ARGUMENT");
+
+    private final int code;
+    private final String desc;
+
+    ResponseCode(int code,String desc){
+        this.code = code;
+        this.desc = desc;
+    }
+    public int getCode(){
+        return code;
+    }
+    public String getDesc() {
+        return desc;
+    }
+}
+```
+#### 2.序列化
+#### 3.范型类
+```java
+package cn.lovingliu.common;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.io.Serializable;
+
+/**
+ * @Author：LovingLiu
+ * @Description:
+ * @Date：Created in 2019-09-04
+ */
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL) // 当某个字段为null 不将该字段进行序列化（key消失）
+public class ServerResponse<T> implements Serializable {
+    private int status;
+    private String msg;
+    private T data;
+
+    private ServerResponse(int status){
+        this.status = status;
+    }
+    private ServerResponse(int status,T data){
+        this.status = status;
+        this.data = data;
+    }
+    private ServerResponse(int status,String msg){
+        this.status = status;
+        this.msg = msg;
+    }
+    private ServerResponse(int status,String msg,T data){
+        this.status = status;
+        this.msg = msg;
+        this.data = data;
+    }
+    @JsonIgnore
+    public boolean isSuccess(){
+        return this.status == ResponseCode.SUCCESS.getCode();
+    }
+    public int getStatus(){
+        return status;
+    }
+    public T getData(){
+        return data;
+    }
+    public String getMsg(){
+        return msg;
+    }
+
+    public static <T> ServerResponse<T> createBySuccess(){
+        return new ServerResponse<T>(ResponseCode.SUCCESS.getCode());
+    }
+
+    public static <T> ServerResponse<T> createBySuccessMessage(String msg){
+        return new ServerResponse<T>(ResponseCode.SUCCESS.getCode(),msg);
+    }
+
+    public static <T> ServerResponse<T> createBySuccess(T data){
+        return new ServerResponse<T>(ResponseCode.SUCCESS.getCode(),data);
+    }
+
+    public static <T> ServerResponse<T> createBySuccess(String msg,T data){
+        return new ServerResponse<T>(ResponseCode.SUCCESS.getCode(),msg,data);
+    }
+
+
+
+
+
+    public static <T> ServerResponse<T> createByError(){
+        return new ServerResponse<T>(ResponseCode.ERROR.getCode(),ResponseCode.ERROR.getDesc());
+    }
+
+    public static <T> ServerResponse<T> createByErrorMessage(String errorMsg){
+        return new ServerResponse<T>(ResponseCode.SUCCESS.getCode(),errorMsg);
+    }
+
+    public static <T> ServerResponse<T> createByErrorCodeMessage(int errorCode,String errorMsg){
+        return new ServerResponse<T>(errorCode,errorMsg);
+    }
+
+}
+
 ```
