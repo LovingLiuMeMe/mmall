@@ -49,7 +49,7 @@ public class UserServiceImpl implements IUserService {
         if(!validResponse.ifSuccess()){
             return validResponse;
         }
-        validResponse = this.checkValid(user.getPassword(),Const.EMAIL);
+        validResponse = this.checkValid(user.getEmail(),Const.EMAIL);
         if(!validResponse.ifSuccess()){
             return validResponse;
         }
@@ -75,7 +75,7 @@ public class UserServiceImpl implements IUserService {
                     return ServerResponse.createByErrorMessage("用户名已存在");
                 }
             }
-            if(Const.EMAIL.equals("type")){
+            if(Const.EMAIL.equals(type)){
                 int resultCount = userMapper.checkUserEmail(str);
                 if(resultCount>0){
                     return ServerResponse.createByErrorMessage("该邮箱已经被使用了");
@@ -154,7 +154,7 @@ public class UserServiceImpl implements IUserService {
         if(resultCount==0){
             return ServerResponse.createByErrorMessage("旧密码错误");
         }
-        user.setPassword(passwordNew);
+        user.setPassword(MD5Util.MD5EncodeUtf8(passwordNew));
         int updateCount = userMapper.updateByPrimaryKeySelective(user);
         if(updateCount > 0){
             return ServerResponse.createBySuccessMessage("密码更新成功");

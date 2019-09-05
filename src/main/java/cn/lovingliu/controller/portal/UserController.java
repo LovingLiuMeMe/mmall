@@ -39,7 +39,7 @@ public class UserController {
         }
         return response;
     }
-    @RequestMapping(value = "logout.do",method = RequestMethod.GET)
+    @RequestMapping(value = "logout.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<User> logout(HttpSession session){
         session.removeAttribute(Const.CURRENT_USER);
@@ -77,7 +77,7 @@ public class UserController {
      * @Desc 用户忘记密码
      * @Author LovingLiu
      */
-    @RequestMapping(value = "forget_get_question.do",method = RequestMethod.GET)
+    @RequestMapping(value = "forget_get_question.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<String> forgetGetQuestion(String username){
         return userService.selectQuestion(username);
@@ -86,7 +86,7 @@ public class UserController {
      * @Desc 检查回答是否正确
      * @Author LovingLiu
     */
-    @RequestMapping(value = "forget_check_answer.do",method = RequestMethod.GET)
+    @RequestMapping(value = "forget_check_answer.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<String> forgetCheckAnswer(String username,String question,String answer){
         return userService.checkAnswer(username, question, answer);
@@ -137,7 +137,7 @@ public class UserController {
         return response;
     }
     /**
-     * @Desc 获取个人信息
+     * @Desc 获取个人信息并提示强制登陆 前端跳转登陆页
      * @Author LovingLiu
     */
     @RequestMapping(value = "get_information.do",method = RequestMethod.POST)
