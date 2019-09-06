@@ -56,7 +56,8 @@ public class CategoryManageController {
      * @Desc 获取子节点平级的category信息
      * @Author LovingLiu
     */
-
+    @RequestMapping("get_category.do")
+    @ResponseBody
     public ServerResponse getChildrenParallelCategory(HttpSession session, @RequestParam(value = "categoryId",defaultValue = "0") Integer categoryId){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
         if(user == null){
@@ -66,9 +67,27 @@ public class CategoryManageController {
         if(!userService.checkAdminRole(user).ifSuccess()){
             return ServerResponse.createByErrorMessage("无权限操作，需要管理员");
         }
-        // 查询子节点的categoryx信息
-
-        return null;
+        // 查询子节点的category信息
+        return categoryService.getChildrenParallelCategory(categoryId);
     }
+    /**
+     * @Desc 获取当前categoryId并且递归查询当前子节点id
+     * @Author LovingLiu
+    */
+    @RequestMapping("get_deep_category.do")
+    @ResponseBody
+    public ServerResponse getCategoryAndDeepChildrenCategory(HttpSession session, @RequestParam(value = "categoryId",defaultValue = "0") Integer categoryId){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if(user == null){
+            return ServerResponse.createByErrorMessage("用户未登录,请登陆");
+        }
+        // 校验是否是管理员
+        if(!userService.checkAdminRole(user).ifSuccess()){
+            return ServerResponse.createByErrorMessage("无权限操作，需要管理员");
+        }
+        // 查询当前节点的ID和递归当前子节点的Id
+        return categoryService.getCategoryAndChildrenById(categoryId);
+    }
+
 }
 
