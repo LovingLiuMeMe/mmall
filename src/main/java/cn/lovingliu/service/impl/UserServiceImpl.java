@@ -118,7 +118,7 @@ public class UserServiceImpl implements IUserService {
         return ServerResponse.createByErrorMessage("回答错误");
     }
     /**
-     * @Desc
+     * @Desc 回答问题重置密码
      * @Author LovingLiu
     */
     public ServerResponse<String> forgetResetPassword(String username,String passwordNew,String forgetToken){
@@ -148,6 +148,11 @@ public class UserServiceImpl implements IUserService {
         }
         return ServerResponse.createByErrorMessage("修改失败");
     }
+    /**
+     * @Desc 重置密码（登陆状态下）
+     * @Author LovingLiu
+    */
+
     public ServerResponse<String> restPassword(String passwordOld,String passwordNew,User user){
         // 防止横向🈷️权 要校验一下旧密码，一定要指定是这个用户，因为我们会查询一个count(1),如果不指定Id，那么结果就是true
         int resultCount = userMapper.checkPassword(MD5Util.MD5EncodeUtf8(passwordOld),user.getId());
@@ -161,6 +166,11 @@ public class UserServiceImpl implements IUserService {
         }
         return ServerResponse.createByErrorMessage("密码更新失败");
     }
+    /**
+     * @Desc 更新用户信息
+     * @Author LovingLiu
+    */
+
     public ServerResponse<User> updateInformation(User user){
         // username 是不能被更新的
         // email 校验 新的email 是否存在，存在的话是否是当前登陆用户
@@ -181,6 +191,11 @@ public class UserServiceImpl implements IUserService {
         }
         return ServerResponse.createByErrorMessage("更新失败");
     }
+    /**
+     * @Desc 获得详细信息
+     * @Author LovingLiu
+    */
+
     public ServerResponse<User> getInformation(Integer userId){
         User user = userMapper.selectByPrimaryKey(userId);
         if(user == null){
@@ -188,6 +203,20 @@ public class UserServiceImpl implements IUserService {
         }
         user.setPassword(StringUtils.EMPTY);
         return ServerResponse.createBySuccess("获取成功",user);
+    }
+
+    // backend
+    /**
+     * @Desc 校验是否是管理员
+     * @Author LovingLiu
+    */
+
+    public ServerResponse checkAdminRole(User user){
+        if(user != null && user.getRole().equals(Const.Role.ROLE_ADMIN)){
+             return ServerResponse.createBySuccess();
+        }else {
+            return ServerResponse.createByError();
+        }
     }
 
 
