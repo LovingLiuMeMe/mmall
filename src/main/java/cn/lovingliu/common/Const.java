@@ -1,5 +1,9 @@
 package cn.lovingliu.common;
 
+import com.google.common.collect.Sets;
+
+import java.util.Set;
+
 /**
  * @Author：LovingLiu
  * @Description:
@@ -13,5 +17,26 @@ public class Const {
     public interface Role{
         int ROLE_CUSTOMER = 1; // 普通用户
         int ROLE_ADMIN = 0;// 管理员
+    }
+    // 设置ProductList的排序方式
+    public interface ProductListOrderBy{
+        Set<String> PRICE_ASC_DESC = Sets.newHashSet("price_desc","price_asc");
+    }
+    public enum ProductStatusEnum{
+        ON_SALE(0,"上线");
+        private String value;
+        private int code;
+        ProductStatusEnum(int code,String value){
+            this.code = code;
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public int getCode() {
+            return code;
+        }
     }
 }

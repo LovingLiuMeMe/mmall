@@ -4,6 +4,8 @@ import cn.lovingliu.common.ServerResponse;
 import cn.lovingliu.dao.CategoryMapper;
 import cn.lovingliu.pojo.Category;
 import cn.lovingliu.service.ICategoryService;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +79,24 @@ public class CategoryServiceImpl implements ICategoryService {
             return ServerResponse.createBySuccess("获取成功",idList);
         }
        return ServerResponse.createByErrorMessage("获取失败");
+    }
+
+    /**
+     * @Desc 递归查询本节点的id及孩子节点的id
+     * @Author LovingLiu
+    */
+    public ServerResponse<List<Integer>> selectCategoryAndChildrenById(Integer categoryId){
+        Set<Category> categorySet = Sets.newHashSet();
+        findChildCategory(categorySet,categoryId);
+
+
+        List<Integer> categoryIdList = Lists.newArrayList();
+        if(categoryId != null){
+            for(Category categoryItem : categorySet){
+                categoryIdList.add(categoryItem.getId());
+            }
+        }
+        return ServerResponse.createBySuccess(categoryIdList);
     }
 
     /**

@@ -17,7 +17,7 @@ public class PropertiesUtil {
     private static Logger logger = LoggerFactory.getLogger(PropertiesUtil.class);
 
     private static Properties props;
-
+    // 静态代码块 使得在tomcat启动时 就读取配置文件
     static {
         String fileName = "mmall.properties";
         props = new Properties();
