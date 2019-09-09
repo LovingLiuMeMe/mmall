@@ -50,26 +50,25 @@ public class ProductServiceImpl implements IProductService {
         }
         // 新增 or 修改
         if(product.getId() == null){
-            Integer updateCount = productMapper.updateByPrimaryKeySelective(product);
-            if(updateCount > 0){
-                return ServerResponse.createBySuccess("更新商品成功");
-            }
-            return ServerResponse.createBySuccess("更新商品失败");
-
-        }else{
             Integer rowCount = productMapper.insert(product);
             if(rowCount > 0){
                 return ServerResponse.createBySuccess("新增产品成功");
             }
             return ServerResponse.createBySuccess("新增产品失败");
+        }else{
+            Integer updateCount = productMapper.updateByPrimaryKeySelective(product);
+            if(updateCount > 0){
+                return ServerResponse.createBySuccess("更新商品成功");
+            }
+            return ServerResponse.createBySuccess("更新商品失败");
         }
     }
 
-    public ServerResponse<String> setStatus(Integer productId){
-        if(productId == null){
+    public ServerResponse<String> setStatus(Integer productId,Integer status){
+        if(productId == null || status == null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
         }
-        Integer updateCount = productMapper.updateStatusById(productId);
+        Integer updateCount = productMapper.updateStatusById(productId,status);
         if(updateCount > 0){
             return ServerResponse.createByErrorMessage("更新成功");
         }
@@ -93,8 +92,10 @@ public class ProductServiceImpl implements IProductService {
         // 1.startPage--start
         // 2.填充自己的sql查询逻辑
         // 3.page-helper--收尾
-        PageHelper.startPage(pageNum,pageSize);// 1
-        // 2
+
+        // 1.调用该方法后，在此方法后面的第一个mybaits查询语句就会按照这个进行分页
+        PageHelper.startPage(pageNum,pageSize);
+        // 2.实现自己的逻辑
         List<Product> productList = productMapper.selectList();
         List<ProductListVo> productListVoList =  new ArrayList<>();
         for (Product productItem:productList){
@@ -102,7 +103,7 @@ public class ProductServiceImpl implements IProductService {
             ProductListVo productListVo = assembleProductListVo(productItem);
             productListVoList.add(productListVo);
         }
-        // 3
+        // 3.对第一次查询的集合传入，可以获得更多的页面操作信息，封装在PageInfo 这个对象上
         PageInfo pageResult = new PageInfo(productList);
         pageResult.setList(productListVoList);
         return ServerResponse.createBySuccess(pageResult);
@@ -150,6 +151,7 @@ public class ProductServiceImpl implements IProductService {
         if(StringUtils.isBlank(keyword) && categoryId == null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
         }
+        // 获取那个categoryId和parentId==categoryId的所有categoryId
         List<Integer> categoryIdList = new ArrayList<Integer>();
 
         if(categoryId != null){
@@ -158,11 +160,14 @@ public class ProductServiceImpl implements IProductService {
                 //没有该分类,并且还没有关键字,这个时候返回一个空的结果集,不报错
                 PageHelper.startPage(pageNum,pageSize);
                 List<ProductListVo> productListVoList = Lists.newArrayList();
-                PageInfo pageInfo = new PageInfo(productListVoList);
+                PageInfo pageInfo = new PageInfo(productListVoList);// 注意这里直接传入的是VO List
                 return ServerResponse.createBySuccess(pageInfo);
             }
-            categoryIdList = categoryService.selectCategoryAndChildrenById(category.getId()).getData();
+            if(category != null){
+                categoryIdList = categoryService.selectCategoryAndChildrenById(category.getId()).getData();
+            }
         }
+
         if(StringUtils.isNotBlank(keyword)){
             keyword = new StringBuilder().append("%").append(keyword).append("%").toString();
         }
@@ -171,7 +176,7 @@ public class ProductServiceImpl implements IProductService {
         //排序处理
         if(StringUtils.isNotBlank(orderBy)){
             if(Const.ProductListOrderBy.PRICE_ASC_DESC.contains(orderBy)){
-                String[] orderByArray = orderBy.split("_");
+                String[] orderByArray = orderBy.split("_");// 前端 price_desc
                 PageHelper.orderBy(orderByArray[0]+" "+orderByArray[1]);
             }
         }

@@ -62,7 +62,7 @@ public class ProductManageController {
 
     @RequestMapping("set_sale_status.do")
     @ResponseBody
-    public ServerResponse setSaleStatus(HttpSession session, Integer productId){
+    public ServerResponse setSaleStatus(HttpSession session, Integer productId, @RequestParam(value = "status",defaultValue = "1")Integer status){
         User user = (User)session.getAttribute(Const.CURRENT_USER);
         if(user == null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"未登录,请登录管理员");
@@ -71,7 +71,7 @@ public class ProductManageController {
             return ServerResponse.createByErrorMessage("无权限操作");
         }
 
-        return productService.setStatus(productId);
+        return productService.setStatus(productId,status);
     }
     /**
      * @Desc 获得商品详情

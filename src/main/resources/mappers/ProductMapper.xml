@@ -176,9 +176,9 @@
       update_time = now()
     where id = #{id,jdbcType=INTEGER}
   </update>
-  <update id="updateStatusById" parameterType="int">
+  <update id="updateStatusById" parameterType="map">
     update mmall_product
-    set status = !status
+    set status = #{status}
     where id = #{productId}
   </update>
   <select id="selectList" resultMap="BaseResultMap">
@@ -200,6 +200,9 @@
       </if>
     </where>
   </select>
+  <!--
+    模糊查询名称 + 指定分类 及其 子分类的商品
+  -->
   <select id="selectByNameAndCategoryIds" resultMap="BaseResultMap" parameterType="map">
     SELECT
     <include refid="Base_Column_List"></include>

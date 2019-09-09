@@ -30,7 +30,8 @@ public class ProductController {
      * @Desc 模糊搜索商品列表 注意required 默认是必须传的，若为非必须 必须声明
      * @Author LovingLiu
     */
-
+    @RequestMapping("list.do")
+    @ResponseBody
     public ServerResponse<PageInfo> list(
             @RequestParam(value = "keyword",required = false)String keyword,
             @RequestParam(value = "categoryId",required = false)Integer categoryId,

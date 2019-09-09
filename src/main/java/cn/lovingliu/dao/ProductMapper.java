@@ -17,7 +17,7 @@ public interface ProductMapper {
     int updateByPrimaryKeySelective(Product record);
 
     int updateByPrimaryKey(Product record);
-    int updateStatusById(Integer productId);
+    int updateStatusById(@Param("productId") Integer productId ,@Param("status") Integer status);
     List<Product> selectList();
     List<Product> selectByNameAndProductId(@Param("productName") String productName,@Param("productId") Integer productId);
     List<Product> selectByNameAndCategoryIds(@Param("productName")String productName,@Param("categoryIdList")List<Integer> categoryIdList);

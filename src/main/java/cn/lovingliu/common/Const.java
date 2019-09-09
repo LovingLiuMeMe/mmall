@@ -23,7 +23,7 @@ public class Const {
         Set<String> PRICE_ASC_DESC = Sets.newHashSet("price_desc","price_asc");
     }
     public enum ProductStatusEnum{
-        ON_SALE(0,"上线");
+        ON_SALE(1,"在售");
         private String value;
         private int code;
         ProductStatusEnum(int code,String value){

@@ -965,3 +965,203 @@ Integer i = (Integer) lsa[1].get(0); // OK
 在业务需求的开发过程中。纯POJO对象，已经无法满足前端的业务的展示要求。或者是说会给前端增加一些困难。  
 比如在pojo中存放的是`a.png`  
 前端是无法明确展示的，这时候应该生成一个ViewObject,返回的是`www.lovingliu.cn/images/a.png`
+
+#### 图片上传总结
+String path = request.getSession().getServletContext().getRealPath("upload");
+```java
+request.getSession().getServletContext() 获得的是容器的实例 即:tomcat
+
+String path = request.getSession().getServletContext().getRealPath("upload");// 拿到的是和WEB-INF同级的（服务器的发布环境）
+System.out.println("rootPath:   "+request.getSession().getServletContext().getRealPath(""));
+System.out.println("uploadPath:   "+request.getSession().getServletContext().getRealPath("upload"));
+
+rootPath:   /Users/lovingliu/tomcat/apache-tomcat-7.0.93/webapps/ROOT  项目根路径
+uploadPath:   /Users/lovingliu/tomcat/apache-tomcat-7.0.93/webapps/ROOT/upload    // 实际上就是 + /upload
+```
+##### SpringMvc 图片上传
+springmvc.xml
+```xml
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="maxUploadSize" value="10485760"/> <!-- 10m -->
+    <property name="maxInMemorySize" value="4096" /> <!-- 内存块大小:此为阈值，低于此值，则保存在内存中，如高于此值，则生成硬盘上的临时文件 -->
+    <property name="defaultEncoding" value="UTF-8"></property>
+</bean>
+```
+controller
+```JAVA
+@RequestMapping("upload.do")
+@ResponseBody
+public ServerResponse upload(HttpSession session,@RequestParam(name = "upload_file",required = false) MultipartFile file, HttpServletRequest request){
+    User user = (User)session.getAttribute(Const.CURRENT_USER);
+    if(user == null){
+        return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"未登录,请登录管理员");
+    }
+    if(!userService.checkAdminRole(user).ifSuccess()){
+        return ServerResponse.createByErrorMessage("无权限操作");
+    }
+
+    String path = request.getSession().getServletContext().getRealPath("upload");// 拿到的是和WEB-INF同级的（服务器的发布环境）
+    String targetFileName = fileService.upload(file,path);
+    String url = PropertiesUtil.getProperty("ftp.server.http.prefix")+targetFileName;
+    Map fileMap = Maps.newHashMap();
+    fileMap.put("uri",targetFileName);
+    fileMap.put("url",url);
+
+    return ServerResponse.createBySuccess("上传成功",fileMap);
+}
+```
+upload方法
+```java
+public String upload(MultipartFile file,String path){
+    // 图片原始名称
+    String fileName = file.getOriginalFilename();
+    // 图片扩展名
+    String fileExtensionName  = fileName.substring(fileName.lastIndexOf(".")+1);
+    String uploadFileName = UUID.randomUUID().toString()+"."+fileExtensionName;
+    logger.info("上传文件的的文件名是: {},上传的路径: {},新文件名: {}",fileName,path,uploadFileName);
+
+    // 根据路径创建创建文件夹
+    File fileDir = new File(path);
+    if(!fileDir.exists()){
+        fileDir.setWritable(true);// 赋予可写权限
+        fileDir.mkdirs();// 可创建多个级联文件 如:path = "/a/b/c/d" 就可以创建 a b c d 四个文件夹
+    }
+    File targetFile = new File(path,uploadFileName);
+    try {
+        // 将内存或临时磁盘文件写入到磁盘的指定文件中 springMvc方法
+        file.transferTo(targetFile);
+        //< 文件上传成功
+        // 将磁盘中的临时文件上传到Vsftpd服务器中
+        FTPUtil.uploadFile(Lists.newArrayList(targetFile));
+        //<已经上传到ftp服务器上
+        // 删除磁盘文件
+        targetFile.delete();
+    } catch (IOException e) {
+        logger.error("上传文件异常",e);
+        return null;
+    }
+    return targetFile.getName();
+}
+```
+#### pagehelper 分页插件的使用
+```java
+public ServerResponse<PageInfo> getProductList(int pageNum, int pageSize){
+    // 1.startPage--start
+    // 2.填充自己的sql查询逻辑
+    // 3.page-helper--收尾
+
+    // 1.调用该方法后，在此方法后面的第一个mybaits查询语句就会按照这个进行分页
+    PageHelper.startPage(pageNum,pageSize);
+    // 2.实现自己的逻辑
+    List<Product> productList = productMapper.selectList();
+    List<ProductListVo> productListVoList =  new ArrayList<>();
+    for (Product productItem:productList){
+        // 组装数据
+        ProductListVo productListVo = assembleProductListVo(productItem);
+        productListVoList.add(productListVo);
+    }
+    // 3.对第一次查询的集合传入，可以获得更多的页面操作信息，封装在PageInfo 这个对象上
+    PageInfo pageResult = new PageInfo(productList);
+    pageResult.setList(productListVoList);
+    return ServerResponse.createBySuccess(pageResult);
+
+}
+```
+#### 模糊查询和mybatis where in 操作
+```java
+public ServerResponse<PageInfo> getProductByKeywordCategory(String keyword,Integer categoryId,int pageNum,int pageSize,String orderBy){
+    if(StringUtils.isBlank(keyword) && categoryId == null){
+        return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
+    }
+    // 获取那个categoryId和parentId==categoryId的所有categoryId
+    List<Integer> categoryIdList = new ArrayList<Integer>();
+
+    if(categoryId != null){
+        Category category = categoryMapper.selectByPrimaryKey(categoryId);
+        if(category == null && StringUtils.isBlank(keyword)){
+            //没有该分类,并且还没有关键字,这个时候返回一个空的结果集,不报错
+            PageHelper.startPage(pageNum,pageSize);
+            List<ProductListVo> productListVoList = Lists.newArrayList();
+            PageInfo pageInfo = new PageInfo(productListVoList);// 注意这里直接传入的是VO List
+            return ServerResponse.createBySuccess(pageInfo);
+        }
+        categoryIdList = categoryService.selectCategoryAndChildrenById(category.getId()).getData();
+    }
+    if(StringUtils.isNotBlank(keyword)){
+        keyword = new StringBuilder().append("%").append(keyword).append("%").toString();
+    }
+
+    PageHelper.startPage(pageNum,pageSize);
+    //排序处理
+    if(StringUtils.isNotBlank(orderBy)){
+        if(Const.ProductListOrderBy.PRICE_ASC_DESC.contains(orderBy)){
+            String[] orderByArray = orderBy.split("_");// 前端 price_desc
+            PageHelper.orderBy(orderByArray[0]+" "+orderByArray[1]);
+        }
+    }
+    List<Product> productList = productMapper.selectByNameAndCategoryIds(StringUtils.isBlank(keyword)?null:keyword,categoryIdList.size()==0?null:categoryIdList);
+
+    List<ProductListVo> productListVoList = Lists.newArrayList();
+    for(Product product : productList){
+        ProductListVo productListVo = assembleProductListVo(product);
+        productListVoList.add(productListVo);
+    }
+
+    PageInfo pageInfo = new PageInfo(productList);
+    pageInfo.setList(productListVoList);
+    return ServerResponse.createBySuccess(pageInfo);
+}
+```
+ProductMapper.xml
+```xml
+    <!--
+    模糊查询名称 + 指定分类 及其 子分类的商品
+    -->
+    <select id="selectByNameAndCategoryIds" resultMap="BaseResultMap" parameterType="map">
+    SELECT
+    <include refid="Base_Column_List"></include>
+    from mmall_product
+    where status = 1
+    <if test="productName != null">
+      and name like #{productName}
+    </if>
+    <if test="categoryIdList != null" >
+      and category_id in
+      <foreach item="item" index="index" open="(" separator="," close=")" collection="categoryIdList">
+        #{item}
+      </foreach>
+    </if>
+    </select>
+```
+##### mybatis foreach标签的使用
+```
+<foreach> 元素主要用在构建 in 条件中，它可以在 SQL 语句中迭代一个集合。
+
+<foreach> 元素的属性主要有 item、index、collection、open、separator、close。
+item 表示集合中每一个元素进行迭代时的别名。
+index 指定一个名字，用于表示在迭代过程中每次迭代到的位置。
+open 表示该语句以什么开始。
+separator 表示在每次进行迭代之间以什么符号作为分隔符。
+close 表示以什么结束。
+
+在使用 <foreach> 元素时，最关键、最容易出错的是 collection 属性，该属性是必选的，但在不同情况下该属性的值是不一样的，主要有以下 3 种情况：
+如果传入的是单参数且参数类型是一个 List，collection 属性值为 list。
+如果传入的是单参数且参数类型是一个 array 数组，collection 的属性值为 array。
+如果传入的参数是多个，需要把它们封装成一个 Map，当然单参数也可以封装成 Map。Map 的 key 是参数名，collection 属性值是传入的 List 或 array 对象在自己封装的 Map 中的 key。
+```
+##### 扩展:   mybatis 实现批量更新
+```xml
+<update id="updateCaStores">
+    <foreach separator=";" collection="list" item="c" index="index">
+        update cake
+        <set>
+            caStore=#{c.caStore}
+        </set>
+        where id =#{c.id}
+    </foreach>
+</update>
+```
+同时注意mysql的批量更新是要我们主动去设置的,需要在配置数据库连接地址中加上`&allowMultiQueries=true`
+```properties
+jdbcUrl=jdbc:mysql:///cake?characterEncoding=utf-8&allowMultiQueries=true
+```

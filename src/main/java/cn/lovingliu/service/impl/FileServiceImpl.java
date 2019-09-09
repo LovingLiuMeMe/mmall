@@ -28,6 +28,7 @@ public class FileServiceImpl implements IFileService {
         String uploadFileName = UUID.randomUUID().toString()+"."+fileExtensionName;
         logger.info("上传文件的的文件名是: {},上传的路径: {},新文件名: {}",fileName,path,uploadFileName);
 
+        // 根据路径创建创建文件夹
         File fileDir = new File(path);
         if(!fileDir.exists()){
             fileDir.setWritable(true);// 赋予可写权限
@@ -35,10 +36,13 @@ public class FileServiceImpl implements IFileService {
         }
         File targetFile = new File(path,uploadFileName);
         try {
+            // 将内存或临时磁盘文件写入到磁盘的指定文件中 springMvc方法
             file.transferTo(targetFile);
-            //文件上传成功
+            //< 文件上传成功
+            // 将磁盘中的临时文件上传到Vsftpd服务器中
             FTPUtil.uploadFile(Lists.newArrayList(targetFile));
-            // 已经上传到ftp服务器上
+            //<已经上传到ftp服务器上
+            // 删除磁盘文件
             targetFile.delete();
         } catch (IOException e) {
             logger.error("上传文件异常",e);
