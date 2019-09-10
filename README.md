@@ -1165,3 +1165,36 @@ close 表示以什么结束。
 ```properties
 jdbcUrl=jdbc:mysql:///cake?characterEncoding=utf-8&allowMultiQueries=true
 ```
+#### mysql IFNULL ISNULL NULLIF
+一、IFNULL(expr1,expr2)用法
+```
+    假如expr1不为NULL，则 IFNULL() 的返回值为expr1; 否则其返回值为 expr2。IFNULL()的返回值是数字或是字符串，具体情况取决于其所使用的语境。
+      mysql>   SELECT   IFNULL(1,0);   
+                            ->   1   
+      mysql>   SELECT   IFNULL(NULL,10);   
+                            ->   10   
+      mysql>   SELECT   IFNULL(1/0,10);   
+                            ->   10   
+      mysql>   SELECT   IFNULL(1/0,'yes');   
+                            ->   'yes'  
+      IFNULL(expr1,expr2)的默认结果值为两个表达式中更加“通用”的一个，顺序为STRING、REAL或 INTEGER。
+
+```
+二、ISNULL(expr) 的用法
+```
+    如expr 为null，那么isnull() 的返回值为 1，否则返回值为 0。 
+    mysql> select isnull(1+1);
+                       -> 0
+    mysql> select isnull(1/0);
+                       -> 1
+    使用= 的null 值对比通常是错误的。
+```
+三、NULLIF(expr1,expr2)用法
+```
+    如果expr1 = expr2 成立，那么返回值为NULL，否则返回值为expr1。这和CASE  WHEN expr1 = expr2 THEN NULL ELSE   expr1 END相同。     
+    mysql>   SELECT NULLIF(1,1);   
+                     ->   NULL   
+    mysql>   SELECT   NULLIF(1,2);   
+                     ->   1  
+    如果参数不相等，则 MySQL 两次求得的值为 expr1。
+```

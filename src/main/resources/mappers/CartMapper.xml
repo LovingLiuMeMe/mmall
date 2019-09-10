@@ -136,4 +136,34 @@
     -->
     select count(1) from mmall_cart where checked = 0 and user_id = #{userId}
   </select>
+  <delete id="deleteByUserIdProductIds" parameterType="map">
+    delete
+    from mmall_cart
+    where user_id = #{userId}
+    <if test="productIdList != null">
+      and product_id in
+      <foreach item="item" index="index" collection="productIdList" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </if>
+  </delete>
+  <update id="checkedOrUncheckedAllProduct" parameterType="map">
+    update
+    mmall_cart
+    set checked = #{checked},
+    update_time = now()
+    where user_id = #{userId}
+    <if test="productId != null">
+      and product_id = #{productId}
+    </if>
+  </update>
+
+  <select id="selectCartProductCountByUserId" parameterType="int" resultType="int">
+    <!--
+      当userId不存在此表的时候 查询出来就是null null-> int 会报错 NullPointerException
+    -->
+    select IFNULL(sum(quantity),0) as count
+    from mmall_cart
+    where user_id = #{userId}
+  </select>
 </mapper>
