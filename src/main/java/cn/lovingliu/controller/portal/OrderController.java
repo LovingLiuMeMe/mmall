@@ -77,7 +77,24 @@ public class OrderController {
             return ServerResponse.createByErrorMessage("非法请求");
         }
 
-
+        ServerResponse serverResponse = orderService.aliCallBack(params);
+        if(serverResponse.ifSuccess()){
+            return Const.AlipayCallBack.RESPONSE_SUCCESS;
+        }
+        return Const.AlipayCallBack.RESPONSE_FAILED;
     }
 
+    @RequestMapping("query_order_pay_status.do")
+    @ResponseBody
+    public ServerResponse<Boolean> queryOrderPayStatus(HttpSession session, Long orderNo){
+        User user = (User)session.getAttribute(Const.CURRENT_USER);
+        if(user == null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),ResponseCode.NEED_LOGIN.getDesc());
+        }
+        ServerResponse serverResponse = orderService.queryOrderPayStatus(user.getId(),orderNo);
+        if(serverResponse.ifSuccess()){
+            return ServerResponse.createBySuccess(true);
+        }
+        return ServerResponse.createBySuccess(false);
+    }
 }

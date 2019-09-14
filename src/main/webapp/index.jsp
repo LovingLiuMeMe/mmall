@@ -28,10 +28,10 @@
         <input type="file" name="upload_file" />
         <input type="submit" value="上传" />
     </form>
-    <h1>商户商品列表查询</h1>
-    <form name="form2" action="/manage/product/richtext_img_upload.do" method="post" enctype="multipart/form-data">
-        <input type="file" name="upload_file" />
-        <input type="submit" value="上传" />
+    <h1>支付</h1>
+    <form name="form3" action="/order/pay.do" method="post" >
+        <input name="orderNo" value="1491830695216"/></br>
+        <input type="submit" value="付款" />
     </form>
 </body>
 </html>

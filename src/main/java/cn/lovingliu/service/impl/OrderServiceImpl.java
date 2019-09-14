@@ -149,7 +149,7 @@ public class OrderServiceImpl implements IOrderService {
                  * 先在服务器发布目录生成零时文件
                  */
                 // 需要修改为运行机器上的路径
-                String qrcodePath = String.format(path+"/"+" qr-%s.png",
+                String qrcodePath = String.format(path+"/"+"qr-%s.png",
                         response.getOutTradeNo());
                 String qrcodeFileName = String.format("qr-%s.png",response.getOutTradeNo());
                 logger.info("filePath:" + qrcodePath);
@@ -215,8 +215,21 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createBySuccess();
     }
 
+    /**
+     * @Desc 支付宝官方 简单应答
+     * @Author LovingLiu
+    */
+    public ServerResponse queryOrderPayStatus(Integer userId,Long orderId){
+        Order order = orderMapper.selectByUserIdAndOrderNo(userId,orderId);
+        if(order == null){
+            return ServerResponse.createByErrorMessage("该用户不存在该订单");
+        }
+        if(order.getStatus() >= Const.OrderPayStatusEnum.PAID.getStatus()){
+            return ServerResponse.createBySuccessMessage("付款成功");
+        }
+        return ServerResponse.createBySuccessMessage("付款失败");
+    }
 
-    // 简单打印应答
     private void dumpResponse(AlipayResponse response) {
         if (response != null) {
             logger.info(String.format("code:%s, msg:%s", response.getCode(), response.getMsg()));
