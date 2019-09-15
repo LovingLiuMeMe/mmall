@@ -68,6 +68,15 @@ public class Const {
         public String getDesc() {
             return desc;
         }
+
+        public static OrderPayStatusEnum statusOf(int status){
+            for(OrderPayStatusEnum orderPayStatusEnum : values()){
+                if(orderPayStatusEnum.getStatus() == status){
+                    return orderPayStatusEnum;
+                }
+            }
+            throw new RuntimeException("没有找到对应的枚举");
+        }
     }
     public enum PayPlatformEnum{
         ALIPAY(1,"支付宝"),
@@ -86,6 +95,32 @@ public class Const {
 
         public String getDesc() {
             return desc;
+        }
+    }
+    public enum PaymentType{
+        ONLINE_PAY(1,"在线支付");
+        private int status;
+        private String desc;
+        PaymentType(int status, String desc){
+            this.status = status;
+            this.desc = desc;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public static PaymentType statusOf(int status){
+            for(PaymentType paymentType : values()){
+                if(paymentType.getStatus() == status){
+                    return paymentType;
+                }
+            }
+            throw new RuntimeException("没有找到对应的枚举");
         }
     }
     public interface  AlipayCallBack{ // 等待买家付款
